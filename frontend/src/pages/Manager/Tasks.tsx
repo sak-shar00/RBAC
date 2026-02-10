@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "../../store";
-import { fetchTasks, createTask, updateManagerTask, deleteTask, assignTask } from "../../features/tasksSlice";
+import { fetchManagerTasks, createTask, updateManagerTask, deleteTask, assignTask } from "../../features/tasksSlice";
 import { fetchManagerProjects } from "../../features/projectsSlice";
 import Layout from "../../components/Layout";
 import { Button } from "../../components/ui/button";
@@ -32,7 +32,7 @@ export default function ManagerTasks() {
 
   // Fetch tasks on mount
   useEffect(() => {
-    dispatch(fetchTasks());
+    dispatch(fetchManagerTasks());
   }, [dispatch]);
 
   // Fetch developers when modal opens

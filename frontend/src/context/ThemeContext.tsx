@@ -13,7 +13,7 @@ const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<Theme>("light");
-  const [primaryColor, setPrimaryColor] = useState("#3b82f6");
+  const [primaryColor, setPrimaryColor] = useState("#22c55e"); // Green primary color
 
   const toggleTheme = () => setTheme(theme === "light" ? "dark" : "light");
 

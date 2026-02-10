@@ -76,3 +76,14 @@ export const updateDeveloperTaskStatusAPI = async (taskId: string, status: strin
   const res = await API.patch(`/developer/tasks/${taskId}/status`, { status });
   return res.data;
 };
+
+// Get developer stats
+export const getDeveloperStatsAPI = async (): Promise<{
+  assignedTasks: number;
+  inProgress: number;
+  completed: number;
+  pending: number;
+}> => {
+  const res = await API.get("/developer/stats");
+  return res.data;
+};

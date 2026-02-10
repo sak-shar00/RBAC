@@ -4,7 +4,7 @@ import { logout } from "../features/authSlice";
 import { useNavigate } from "react-router-dom";
 
 export default function Header() {
-  const { toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -14,14 +14,35 @@ export default function Header() {
   };
 
   return (
-    <header className="flex justify-between items-center p-4 border-b">
-      <h1 className="text-xl font-bold">RBAC System</h1>
-      <div className="flex gap-4">
-        <button onClick={toggleTheme} className="px-3 py-1 border rounded">
-          Toggle Theme
+    <header className="flex justify-between items-center p-4 border-b bg-white dark:bg-gray-800">
+      <h1 className="text-xl font-bold text-gray-800 dark:text-white">RBAC System</h1>
+      <div className="flex gap-4 items-center">
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+          title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+        >
+          {theme === "light" ? (
+            // Moon icon for dark mode
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          ) : (
+            // Sun icon for light mode
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          )}
         </button>
-        <button onClick={handleLogout} className="px-3 py-1 border rounded bg-red-500 text-white hover:bg-red-600 transition">
-          Logout
+        <button
+          onClick={handleLogout}
+          className="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition flex items-center gap-2"
+          title="Logout"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span className="hidden sm:inline">Logout</span>
         </button>
       </div>
     </header>

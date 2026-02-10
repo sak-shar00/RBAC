@@ -105,7 +105,8 @@ export const getMyProjects = async (req, res) => {
 // Get all developers
 export const getAllDevelopers = async (req, res) => {
   try {
-    const developers = await User.find({ role: "developer", isActive: true }).select("-password");
+    // Fetch all developers including inactive ones for assignment
+    const developers = await User.find({ role: "developer" }).select("-password");
     res.json(developers);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -156,10 +157,10 @@ export const assignTaskToDeveloper = async (req, res) => {
   try {
     const { assignedTo } = req.body;
     
-    // Verify assigned user is a developer
-    const developer = await User.findOne({ _id: assignedTo, role: "developer", isActive: true });
+    // Verify assigned user is a developer (allow inactive developers too)
+    const developer = await User.findOne({ _id: assignedTo, role: "developer" });
     if (!developer) {
-      return res.status(404).json({ message: "Developer not found or inactive" });
+      return res.status(404).json({ message: "Developer not found" });
     }
 
     const task = await Task.findById(req.params.id);

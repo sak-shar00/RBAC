@@ -21,9 +21,25 @@ export const toggleUser = async (req, res) => {
 };
 
 // projects
+export const getAllProjects = async (req, res) => {
+  try {
+    const projects = await Project.find()
+      .populate("manager", "name email");
+    res.json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const createProject = async (req, res) => {
-  const project = await Project.create(req.body);
-  res.json(project);
+  try {
+    const project = await Project.create(req.body);
+    const populatedProject = await Project.findById(project._id)
+      .populate("manager", "name email");
+    res.json(populatedProject);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const assignProject = async (req, res) => {

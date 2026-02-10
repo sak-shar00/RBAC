@@ -2,6 +2,7 @@ import express from "express";
 import {
   getAllUsers,
   createUser,
+  getAllProjects,
   createProject,
   assignProject,
   viewAllTasks,
@@ -18,6 +19,7 @@ router.use(protect, allowRoles("admin"));
 router.get("/users", getAllUsers);
 router.post("/users", createUser);
 router.patch("/users/:id", toggleUser);
+router.get("/projects", getAllProjects);
 router.post("/projects", createProject);
 router.patch("/projects/:projectId", assignProject);
 router.get("/tasks", viewAllTasks);

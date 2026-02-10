@@ -7,10 +7,10 @@ connectDB();
 
 const seedAdmin = async () => {
   try {
-    // Delete old admin
+    
     await User.deleteMany({ email: "admin@gmail.com" });
 
-    // Create admin with plain password
+
     await User.create({
       name: "Admin",
       email: "admin@gmail.com",

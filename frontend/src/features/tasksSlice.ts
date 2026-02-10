@@ -9,16 +9,28 @@ import {
   updateManagerTaskAPI,
   deleteTaskAPI, 
   assignTaskAPI,
-  updateDeveloperTaskStatusAPI 
+  updateDeveloperTaskStatusAPI,
+  getDeveloperStatsAPI 
 } from "./tasks";
 
 interface TasksState { 
   tasks: Task[]; 
   loading: boolean; 
   error: string | null; 
+  stats: {
+    assignedTasks: number;
+    inProgress: number;
+    completed: number;
+    pending: number;
+  } | null;
 }
 
-const initialState: TasksState = { tasks: [], loading: false, error: null };
+const initialState: TasksState = { 
+  tasks: [], 
+  loading: false, 
+  error: null,
+  stats: null
+};
 
 // Fetch all tasks (admin)
 export const fetchTasks = createAsyncThunk("tasks/fetchTasks", async (_, { rejectWithValue }) => {
@@ -119,6 +131,17 @@ export const updateTaskStatus = createAsyncThunk("tasks/updateTaskStatus", async
   }
 });
 
+// Fetch developer stats
+export const fetchDeveloperStats = createAsyncThunk("tasks/fetchDeveloperStats", async (_, { rejectWithValue }) => {
+  try {
+    const data = await getDeveloperStatsAPI();
+    return data;
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Failed to fetch stats";
+    return rejectWithValue(errorMessage);
+  }
+});
+
 const tasksSlice = createSlice({
   name: "tasks",
   initialState,
@@ -166,6 +189,16 @@ const tasksSlice = createSlice({
       // Update task status (developer)
       .addCase(updateTaskStatus.fulfilled, (state, action: PayloadAction<Task>) => {
         state.tasks = state.tasks.map(t => t._id === action.payload._id ? action.payload : t);
+      })
+      
+      // Fetch developer stats
+      .addCase(fetchDeveloperStats.fulfilled, (state, action: PayloadAction<{
+        assignedTasks: number;
+        inProgress: number;
+        completed: number;
+        pending: number;
+      }>) => {
+        state.stats = action.payload;
       });
   },
 });
