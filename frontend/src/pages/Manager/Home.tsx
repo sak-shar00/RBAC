@@ -2,6 +2,8 @@ import Layout from "../../components/Layout";
 import Card from "../../components/Card";
 import { useEffect, useState } from "react";
 import { getManagerStats } from "../../api/manager";
+import { Folder, CheckSquare, Users } from "lucide-react";
+import Spinner from "../../components/Spinner";
 
 interface ManagerStats {
   projects: number;
@@ -33,7 +35,7 @@ export default function ManagerHome() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <Spinner />
         </div>
       </Layout>
     );
@@ -46,20 +48,20 @@ export default function ManagerHome() {
         <Card 
           title="My Projects" 
           value={stats?.projects?.toString() || "0"} 
-          description="Active projects" 
-          icon="📁" 
+          description="Active projects"
+          icon={Folder}
         />
         <Card 
           title="My Tasks" 
           value={stats?.tasks?.toString() || "0"} 
-          description={`${stats?.completedTasks || 0} completed, ${stats?.pendingTasks || 0} pending`} 
-          icon="✅" 
+          description={`${stats?.completedTasks || 0} completed, ${stats?.pendingTasks || 0} pending`}
+          icon={CheckSquare}
         />
         <Card 
           title="Developers" 
           value={stats?.developers?.toString() || "0"} 
-          description="Team members" 
-          icon="👨‍💻" 
+          description="Team members"
+          icon={Users}
         />
       </div>
     </Layout>

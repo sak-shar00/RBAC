@@ -3,6 +3,8 @@ import Layout from "../../components/Layout";
 import Card from "../../components/Card";
 import { fetchDashboardStatsAPI } from "../../api/admin";
 import { useState } from "react";
+import { Users, Folder, CheckSquare } from "lucide-react";
+import Spinner from "../../components/Spinner";
 
 interface DashboardStats {
   users: number;
@@ -35,7 +37,7 @@ export default function AdminHome() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <Spinner />
         </div>
       </Layout>
     );
@@ -48,20 +50,20 @@ export default function AdminHome() {
         <Card 
           title="Users" 
           value={stats?.users?.toString() || "0"} 
-          description={`${stats?.activeUsers || 0} active users`} 
-          icon="👥" 
+          description={`${stats?.activeUsers || 0} active users`}
+          icon={Users}
         />
         <Card 
           title="Projects" 
           value={stats?.projects?.toString() || "0"} 
-          description="Total projects" 
-          icon="📁" 
+          description="Total projects"
+          icon={Folder}
         />
         <Card 
           title="Tasks" 
           value={stats?.tasks?.toString() || "0"} 
-          description={`${stats?.completedTasks || 0} completed, ${stats?.pendingTasks || 0} pending`} 
-          icon="✅" 
+          description={`${stats?.completedTasks || 0} completed, ${stats?.pendingTasks || 0} pending`}
+          icon={CheckSquare}
         />
       </div>
     </Layout>

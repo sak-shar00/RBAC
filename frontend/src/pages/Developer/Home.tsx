@@ -5,6 +5,7 @@ import { fetchDeveloperStats } from "../../features/tasksSlice";
 import Layout from "../../components/Layout";
 import Card from "../../components/Card";
 import Spinner from "../../components/Spinner";
+import { CheckSquare, Clock, Trophy } from "lucide-react";
 
 export default function DeveloperHome() {
   const dispatch = useDispatch<AppDispatch>();
@@ -32,19 +33,19 @@ export default function DeveloperHome() {
           title="Assigned Tasks" 
           value={stats?.assignedTasks?.toString() || "0"} 
           description="Tasks assigned to you" 
-          icon="✅" 
+          icon={CheckSquare} 
         />
         <Card 
           title="In Progress" 
           value={stats?.inProgress?.toString() || "0"} 
           description="Currently working" 
-          icon="🔄" 
+          icon={Clock} 
         />
         <Card 
           title="Completed" 
           value={stats?.completed?.toString() || "0"} 
           description="Tasks completed" 
-          icon="🎉" 
+          icon={Trophy} 
         />
       </div>
     </Layout>

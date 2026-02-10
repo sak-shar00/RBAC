@@ -5,6 +5,8 @@ import type { AppDispatch, RootState } from "../../store";
 import { fetchProjects, createProject, assignProject } from "../../features/projectsSlice";
 import { fetchUsers } from "../../features/usersSlice";
 import Spinner from "../../components/Spinner";
+import { Plus, FolderPlus, UserCog, Edit } from "lucide-react";
+import { Button } from "../../components/ui/button";
 
 export default function AdminProjects() {
   const dispatch = useDispatch<AppDispatch>();
@@ -42,13 +44,26 @@ export default function AdminProjects() {
     <Layout>
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Project Management</h2>
-          <button
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <FolderPlus className="w-7 h-7" />
+            Project Management
+          </h2>
+          <Button
             onClick={() => setShowForm(!showForm)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            className="flex items-center gap-2"
           >
-            {showForm ? "Cancel" : "Create Project"}
-          </button>
+            {showForm ? (
+              <>
+                <Edit className="w-4 h-4" />
+                Cancel
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                Create Project
+              </>
+            )}
+          </Button>
         </div>
 
         {error && (
@@ -59,45 +74,52 @@ export default function AdminProjects() {
 
         {/* Create Project Form */}
         {showForm && (
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h3 className="text-lg font-semibold mb-4">Create New Project</h3>
+          <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-green-200 dark:bg-gray-800 dark:border-gray-700">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Create New Project
+            </h3>
             <form onSubmit={handleCreateProject} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Project Name</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project Name</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   rows={3}
                 />
               </div>
-              <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+              <Button type="submit" className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
                 Create Project
-              </button>
+              </Button>
             </form>
           </div>
         )}
 
         {/* Assign Manager Form */}
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h3 className="text-lg font-semibold mb-4">Assign Manager to Project</h3>
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-blue-200 dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <UserCog className="w-5 h-5" />
+            Assign Manager to Project
+          </h3>
           <form onSubmit={handleAssignManager} className="flex gap-4 items-end">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700">Project</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project</label>
               <select
                 value={assignData.projectId}
                 onChange={(e) => setAssignData({ ...assignData, projectId: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 required
               >
                 <option value="">Select Project</option>
@@ -107,11 +129,11 @@ export default function AdminProjects() {
               </select>
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700">Manager</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Manager</label>
               <select
                 value={assignData.managerId}
                 onChange={(e) => setAssignData({ ...assignData, managerId: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 required
               >
                 <option value="">Select Manager</option>
@@ -120,30 +142,34 @@ export default function AdminProjects() {
                 ))}
               </select>
             </div>
-            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            <Button type="submit" className="flex items-center gap-2">
+              <UserCog className="w-4 h-4" />
               Assign
-            </button>
+            </Button>
           </form>
         </div>
 
         {/* Projects Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-300">
-            <thead className="bg-gray-100">
+          <table className="min-w-full bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700">
+            <thead className="bg-gray-100 dark:bg-gray-700">
               <tr>
-                <th className="px-4 py-2 border-b text-left">Project Name</th>
-                <th className="px-4 py-2 border-b text-left">Description</th>
-                <th className="px-4 py-2 border-b text-left">Manager</th>
+                <th className="px-4 py-2 border-b text-left dark:text-white">Project Name</th>
+                <th className="px-4 py-2 border-b text-left dark:text-white">Description</th>
+                <th className="px-4 py-2 border-b text-left dark:text-white">Manager</th>
               </tr>
             </thead>
             <tbody>
               {projects.map((project) => (
-                <tr key={project._id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 border-b font-medium">{project.name}</td>
-                  <td className="px-4 py-2 border-b">{project.description || "-"}</td>
+                <tr key={project._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-4 py-2 border-b font-medium dark:text-white">{project.name}</td>
+                  <td className="px-4 py-2 border-b dark:text-gray-300">{project.description || "-"}</td>
                   <td className="px-4 py-2 border-b">
                     {project.manager ? (
-                      <span className="text-blue-600">{project.manager.name}</span>
+                      <span className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                        <UserCog className="w-4 h-4" />
+                        {project.manager.name}
+                      </span>
                     ) : (
                       <span className="text-gray-400">Not assigned</span>
                     )}
@@ -154,7 +180,7 @@ export default function AdminProjects() {
           </table>
           
           {projects.length === 0 && !loading && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               No projects found
             </div>
           )}
