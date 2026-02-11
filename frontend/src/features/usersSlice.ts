@@ -50,13 +50,18 @@ export const toggleUser = createAsyncThunk("users/toggleUser", async (id: string
 const usersSlice = createSlice({
   name: "users",
   initialState,
-  reducers: {},
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchUsers.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchUsers.fulfilled, (state, action: PayloadAction<User[]>) => { state.loading = false; state.users = action.payload; })
       .addCase(fetchUsers.rejected, (state, action: PayloadAction<unknown>) => { state.loading = false; state.error = action.payload as string; })
       .addCase(createUser.fulfilled, (state, action: PayloadAction<User>) => { state.users.push(action.payload); })
+      .addCase(createUser.rejected, (state, action: PayloadAction<unknown>) => { state.error = action.payload as string; })
       .addCase(toggleUser.fulfilled, (state, action: PayloadAction<{ id: string }>) => {
         state.users = state.users.map(user => 
           user._id === action.payload.id ? { ...user, isActive: !user.isActive } : user
@@ -64,5 +69,7 @@ const usersSlice = createSlice({
       });
   },
 });
+
+export const { clearError } = usersSlice.actions;
 
 export default usersSlice.reducer;

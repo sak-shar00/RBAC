@@ -9,6 +9,8 @@ import type { Task } from "../../features/tasks";
 import Spinner from "../../components/Spinner";
 import { getDevelopers } from "../../api/manager";
 import { Plus, Trash2, Edit, UserPlus, CheckCircle, Clock, Folder, Users, Calendar } from "lucide-react";
+import Modal from "../../components/Modal";
+import { useNotification } from "../../context/NotificationContext";
 
 interface Developer {
   _id: string;
@@ -20,23 +22,18 @@ export default function ManagerTasks() {
   const dispatch = useDispatch<AppDispatch>();
   const { tasks, loading, error } = useSelector((state: RootState) => state.tasks);
   const { projects } = useSelector((state: RootState) => state.projects);
+  const { showToast, showConfirmation } = useNotification();
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [formData, setFormData] = useState({ title: "", description: "", project: "", assignedTo: "" });
   const [assignModal, setAssignModal] = useState<string | null>(null);
   const [developers, setDevelopers] = useState<Developer[]>([]);
 
-  // Fetch projects on mount
   useEffect(() => {
     dispatch(fetchManagerProjects());
-  }, [dispatch]);
-
-  // Fetch tasks on mount
-  useEffect(() => {
     dispatch(fetchManagerTasks());
   }, [dispatch]);
 
-  // Fetch developers when modal opens
   useEffect(() => {
     if (showModal || assignModal) {
       const loadDevelopers = async () => {
@@ -60,14 +57,21 @@ export default function ManagerTasks() {
       assignedTo: formData.assignedTo || undefined 
     };
     
-    if (editingTask) {
-      await dispatch(updateManagerTask({ taskId: editingTask._id, data }));
-    } else {
-      await dispatch(createTask(data));
+    try {
+      if (editingTask) {
+        await dispatch(updateManagerTask({ taskId: editingTask._id, data })).unwrap();
+        showToast("Task updated successfully!", "success");
+      } else {
+        await dispatch(createTask(data)).unwrap();
+        showToast("Task created successfully!", "success");
+      }
+      setShowModal(false);
+      setEditingTask(null);
+      setFormData({ title: "", description: "", project: "", assignedTo: "" });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to save task";
+      showToast(errorMessage, "error");
     }
-    setShowModal(false);
-    setEditingTask(null);
-    setFormData({ title: "", description: "", project: "", assignedTo: "" });
   };
 
   const handleEdit = (task: Task) => {
@@ -81,15 +85,34 @@ export default function ManagerTasks() {
     setShowModal(true);
   };
 
-  const handleDelete = async (taskId: string) => {
-    if (confirm("Are you sure you want to delete this task?")) {
-      await dispatch(deleteTask(taskId));
-    }
+  const handleDelete = (taskId: string, taskTitle: string) => {
+    showConfirmation({
+      title: "Delete Task",
+      message: `Are you sure you want to delete the task "${taskTitle}"? This action cannot be undone.`,
+      confirmText: "Delete",
+      variant: "danger",
+      onConfirm: () => {
+        dispatch(deleteTask(taskId))
+          .unwrap()
+          .then(() => {
+            showToast("Task deleted successfully!", "success");
+          })
+          .catch((err: string) => {
+            showToast(err || "Failed to delete task", "error");
+          });
+      },
+    });
   };
 
   const handleAssign = async (taskId: string, developerId: string) => {
-    await dispatch(assignTask({ taskId, userId: developerId }));
-    setAssignModal(null);
+    try {
+      await dispatch(assignTask({ taskId, userId: developerId })).unwrap();
+      showToast("Task assigned successfully!", "success");
+      setAssignModal(null);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to assign task";
+      showToast(errorMessage, "error");
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -173,7 +196,7 @@ export default function ManagerTasks() {
                     <Edit className="w-4 h-4" />
                     Edit
                   </Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(task._id)} className="flex items-center gap-1">
+                  <Button variant="destructive" size="sm" onClick={() => handleDelete(task._id, task.title)} className="flex items-center gap-1">
                     <Trash2 className="w-4 h-4" />
                     Delete
                   </Button>
@@ -185,113 +208,98 @@ export default function ManagerTasks() {
       )}
 
       {/* Create/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto dark:bg-gray-800">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 dark:text-white">
-              {editingTask ? (
-                <>
-                  <Edit className="w-5 h-5" />
-                  Edit Task
-                </>
-              ) : (
-                <>
-                  <Plus className="w-5 h-5" />
-                  Create Task
-                </>
-              )}
-            </h2>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
-                <input
-                  type="text"
-                  placeholder="Task title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
-                />
-              </div>
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                <textarea
-                  placeholder="Task description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  rows={3}
-                />
-              </div>
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project</label>
-                <select
-                  value={formData.project}
-                  onChange={(e) => setFormData({ ...formData, project: e.target.value })}
-                  className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                >
-                  <option value="">Select Project</option>
-                  {projects.map((p) => (
-                    <option key={p._id} value={p._id}>{p.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assign to Developer</label>
-                <select
-                  value={formData.assignedTo}
-                  onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-                  className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                >
-                  <option value="">Select Developer</option>
-                  {developers.map((d) => (
-                    <option key={d._id} value={d._id}>{d.name} ({d.email})</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex gap-2 mt-4">
-                <Button type="submit" className="flex items-center gap-1">
-                  <CheckCircle className="w-4 h-4" />
-                  {editingTask ? "Update" : "Create"}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setShowModal(false)} className="flex items-center gap-1">
-                  <Trash2 className="w-4 h-4" />
-                  Cancel
-                </Button>
-              </div>
-            </form>
+      <Modal
+        isOpen={showModal}
+        onClose={() => { setShowModal(false); setEditingTask(null); setFormData({ title: "", description: "", project: "", assignedTo: "" }); }}
+        title={editingTask ? "Edit Task" : "Create Task"}
+        size="lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+            <input
+              type="text"
+              placeholder="Task title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              required
+            />
           </div>
-        </div>
-      )}
-
-      {/* Assign Modal */}
-      {assignModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-96 dark:bg-gray-800">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 dark:text-white">
-              <UserPlus className="w-5 h-5" />
-              Assign Task
-            </h2>
-            <p className="mb-4 text-gray-600 dark:text-gray-300">Select a developer to assign this task:</p>
-            {developers.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400">No developers available</p>
-            ) : (
-              <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
-                {developers.map((dev) => (
-                  <Button key={dev._id} variant="outline" onClick={() => handleAssign(assignModal, dev._id)} className="flex items-center gap-2 justify-start">
-                    <Users className="w-4 h-4" />
-                    {dev.name} ({dev.email})
-                  </Button>
-                ))}
-              </div>
-            )}
-            <Button type="button" variant="ghost" className="mt-4 flex items-center gap-1" onClick={() => setAssignModal(null)}>
-              <Trash2 className="w-4 h-4" />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <textarea
+              placeholder="Task description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              rows={3}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project</label>
+            <select
+              value={formData.project}
+              onChange={(e) => setFormData({ ...formData, project: e.target.value })}
+              className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            >
+              <option value="">Select Project</option>
+              {projects.map((p) => (
+                <option key={p._id} value={p._id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assign to Developer</label>
+            <select
+              value={formData.assignedTo}
+              onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+              className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            >
+              <option value="">Select Developer</option>
+              {developers.map((d) => (
+                <option key={d._id} value={d._id}>{d.name} ({d.email})</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => { setShowModal(false); setEditingTask(null); setFormData({ title: "", description: "", project: "", assignedTo: "" }); }}>
               Cancel
             </Button>
+            <Button type="submit" className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              {editingTask ? "Update" : "Create"}
+            </Button>
           </div>
+        </form>
+      </Modal>
+
+      {/* Assign Modal */}
+      <Modal
+        isOpen={!!assignModal}
+        onClose={() => setAssignModal(null)}
+        title="Assign Task"
+        size="md"
+      >
+        <p className="mb-4 text-gray-600 dark:text-gray-300">Select a developer to assign this task:</p>
+        {developers.length === 0 ? (
+          <p className="text-gray-500 dark:text-gray-400">No developers available</p>
+        ) : (
+          <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+            {developers.map((dev) => (
+              <Button key={dev._id} variant="outline" onClick={() => assignModal && handleAssign(assignModal, dev._id)} className="flex items-center gap-2 justify-start">
+                <Users className="w-4 h-4" />
+                {dev.name} ({dev.email})
+              </Button>
+            ))}
+          </div>
+        )}
+        <div className="flex justify-end pt-4">
+          <Button type="button" variant="ghost" onClick={() => setAssignModal(null)}>
+            Cancel
+          </Button>
         </div>
-      )}
+      </Modal>
     </Layout>
   );
 }

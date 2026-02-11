@@ -5,14 +5,18 @@ import type { AppDispatch, RootState } from "../../store";
 import { fetchProjects, createProject, assignProject } from "../../features/projectsSlice";
 import { fetchUsers } from "../../features/usersSlice";
 import Spinner from "../../components/Spinner";
-import { Plus, FolderPlus, UserCog, Edit } from "lucide-react";
+import { Plus, FolderPlus, UserCog } from "lucide-react";
 import { Button } from "../../components/ui/button";
+import Modal from "../../components/Modal";
+import { useNotification } from "../../context/NotificationContext";
 
 export default function AdminProjects() {
   const dispatch = useDispatch<AppDispatch>();
   const { projects, loading, error } = useSelector((state: RootState) => state.projects);
   const { users } = useSelector((state: RootState) => state.users);
-  const [showForm, setShowForm] = useState(false);
+  const { showToast } = useNotification();
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showAssignForm, setShowAssignForm] = useState(false);
   const [formData, setFormData] = useState({ name: "", description: "" });
   const [assignData, setAssignData] = useState({ projectId: "", managerId: "" });
 
@@ -23,16 +27,34 @@ export default function AdminProjects() {
 
   const handleCreateProject = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(createProject(formData));
-    setFormData({ name: "", description: "" });
-    setShowForm(false);
+    dispatch(createProject(formData))
+      .unwrap()
+      .then(() => {
+        showToast("Project created successfully!", "success");
+        setFormData({ name: "", description: "" });
+        setShowCreateForm(false);
+      })
+      .catch((err: string) => {
+        showToast(err || "Failed to create project", "error");
+      });
   };
 
   const handleAssignManager = (e: React.FormEvent) => {
     e.preventDefault();
     if (assignData.projectId && assignData.managerId) {
-      dispatch(assignProject(assignData));
-      setAssignData({ projectId: "", managerId: "" });
+      const project = projects.find(p => p._id === assignData.projectId);
+      const manager = users.find(u => u._id === assignData.managerId);
+      
+      dispatch(assignProject(assignData))
+        .unwrap()
+        .then(() => {
+          showToast(`Manager ${manager?.name} assigned to project ${project?.name}!`, "success");
+          setAssignData({ projectId: "", managerId: "" });
+          setShowAssignForm(false);
+        })
+        .catch((err: string) => {
+          showToast(err || "Failed to assign manager", "error");
+        });
     }
   };
 
@@ -48,22 +70,22 @@ export default function AdminProjects() {
             <FolderPlus className="w-7 h-7" />
             Project Management
           </h2>
-          <Button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2"
-          >
-            {showForm ? (
-              <>
-                <Edit className="w-4 h-4" />
-                Cancel
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4" />
-                Create Project
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowAssignForm(true)}
+              className="flex items-center gap-2"
+            >
+              <UserCog className="w-4 h-4" />
+              Assign Manager
+            </Button>
+            <Button
+              onClick={() => setShowCreateForm(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create Project
+            </Button>
+          </div>
         </div>
 
         {error && (
@@ -72,49 +94,58 @@ export default function AdminProjects() {
           </div>
         )}
 
-        {/* Create Project Form */}
-        {showForm && (
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-green-200 dark:bg-gray-800 dark:border-gray-700">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Plus className="w-5 h-5" />
-              Create New Project
-            </h3>
-            <form onSubmit={handleCreateProject} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project Name</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  rows={3}
-                />
-              </div>
+        {/* Create Project Modal */}
+        <Modal
+          isOpen={showCreateForm}
+          onClose={() => setShowCreateForm(false)}
+          title="Create New Project"
+          size="md"
+        >
+          <form onSubmit={handleCreateProject} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project Name</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowCreateForm(false)}
+              >
+                Cancel
+              </Button>
               <Button type="submit" className="flex items-center gap-2">
                 <Plus className="w-4 h-4" />
                 Create Project
               </Button>
-            </form>
-          </div>
-        )}
+            </div>
+          </form>
+        </Modal>
 
-        {/* Assign Manager Form */}
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-blue-200 dark:bg-gray-800 dark:border-gray-700">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <UserCog className="w-5 h-5" />
-            Assign Manager to Project
-          </h3>
-          <form onSubmit={handleAssignManager} className="flex gap-4 items-end">
-            <div className="flex-1">
+        {/* Assign Manager Modal */}
+        <Modal
+          isOpen={showAssignForm}
+          onClose={() => setShowAssignForm(false)}
+          title="Assign Manager to Project"
+          size="md"
+        >
+          <form onSubmit={handleAssignManager} className="space-y-4">
+            <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project</label>
               <select
                 value={assignData.projectId}
@@ -128,7 +159,7 @@ export default function AdminProjects() {
                 ))}
               </select>
             </div>
-            <div className="flex-1">
+            <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Manager</label>
               <select
                 value={assignData.managerId}
@@ -142,12 +173,21 @@ export default function AdminProjects() {
                 ))}
               </select>
             </div>
-            <Button type="submit" className="flex items-center gap-2">
-              <UserCog className="w-4 h-4" />
-              Assign
-            </Button>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAssignForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="flex items-center gap-2">
+                <UserCog className="w-4 h-4" />
+                Assign Manager
+              </Button>
+            </div>
           </form>
-        </div>
+        </Modal>
 
         {/* Projects Table */}
         <div className="overflow-x-auto">
@@ -189,3 +229,4 @@ export default function AdminProjects() {
     </Layout>
   );
 }
+

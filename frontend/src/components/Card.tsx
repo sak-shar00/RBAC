@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { type LucideIcon } from "lucide-react";
 
 interface CardProps {
@@ -6,14 +7,23 @@ interface CardProps {
   description?: string;
   icon?: LucideIcon;
   onClick?: () => void;
+  navigateTo?: string;
 }
 
-export default function Card({ title, value, description, icon: Icon, onClick }: CardProps) {
+export default function Card({ title, value, description, icon: Icon, navigateTo }: CardProps) {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (navigateTo) {
+      navigate(navigateTo);
+    }
+  };
+
   return (
     <div
-      onClick={onClick}
-      className={`p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition ${
-        onClick ? "cursor-pointer" : ""
+      onClick={handleClick}
+      className={`p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-1 ${
+        navigateTo ? "cursor-pointer" : ""
       } bg-white dark:bg-gray-800`}
     >
       <div className="flex items-center justify-between">

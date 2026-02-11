@@ -5,17 +5,26 @@ import type { AppDispatch, RootState } from "../../store";
 import { fetchDeveloperTasks, updateTaskStatus } from "../../features/tasksSlice";
 import Spinner from "../../components/Spinner";
 import { Button } from "../../components/ui/button";
+import { useNotification } from "../../context/NotificationContext";
 
 export default function DeveloperTasks() {
   const dispatch = useDispatch<AppDispatch>();
   const { tasks, loading, error } = useSelector((state: RootState) => state.tasks);
+  const { showToast } = useNotification();
 
   useEffect(() => {
     dispatch(fetchDeveloperTasks());
   }, [dispatch]);
 
   const handleStatusChange = (taskId: string, newStatus: string) => {
-    dispatch(updateTaskStatus({ taskId, status: newStatus }));
+    dispatch(updateTaskStatus({ taskId, status: newStatus }))
+      .unwrap()
+      .then(() => {
+        showToast(`Task status updated to ${newStatus}!`, "success");
+      })
+      .catch((err: string) => {
+        showToast(err || "Failed to update task status", "error");
+      });
   };
 
   const getStatusColor = (status: string) => {

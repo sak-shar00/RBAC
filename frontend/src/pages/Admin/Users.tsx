@@ -2,14 +2,17 @@ import Layout from "../../components/Layout";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../store";
-import { fetchUsers, createUser, toggleUser } from "../../features/usersSlice";
+import { fetchUsers, createUser, toggleUser, clearError } from "../../features/usersSlice";
 import Spinner from "../../components/Spinner";
 import { Plus, Users, UserPlus, Check, X } from "lucide-react";
 import { Button } from "../../components/ui/button";
+import Modal from "../../components/Modal";
+import { useNotification } from "../../context/NotificationContext";
 
 export default function AdminUsers() {
   const dispatch = useDispatch<AppDispatch>();
   const { users, loading, error } = useSelector((state: RootState) => state.users);
+  const { showToast, showConfirmation } = useNotification();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -22,15 +25,44 @@ export default function AdminUsers() {
     dispatch(fetchUsers());
   }, [dispatch]);
 
-  const handleToggleUser = (id: string) => {
-    dispatch(toggleUser(id));
+  const handleToggleUser = (id: string, userName: string, action: "activate" | "deactivate") => {
+    const actionText = action === "activate" ? "activate" : "deactivate";
+    showConfirmation({
+      title: `${actionText === "activate" ? "Activate" : "Deactivate"} User`,
+      message: `Are you sure you want to ${actionText} user "${userName}"?`,
+      confirmText: actionText === "activate" ? "Activate" : "Deactivate",
+      variant: actionText === "activate" ? "info" : "danger",
+      onConfirm: () => {
+        dispatch(toggleUser(id))
+          .unwrap()
+          .then(() => {
+            showToast(`User ${userName} has been ${actionText}ed successfully!`, "success");
+          })
+          .catch((err: string) => {
+            showToast(err || `Failed to ${actionText} user`, "error");
+          });
+      },
+    });
   };
 
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(createUser(formData));
-    setFormData({ name: "", email: "", password: "", role: "developer" });
-    setShowForm(false);
+    dispatch(createUser(formData))
+      .unwrap()
+      .then(() => {
+        showToast("User created successfully!", "success");
+        setFormData({ name: "", email: "", password: "", role: "developer" });
+        setShowForm(false);
+      })
+      .catch((err: string) => {
+        // Error is already set in Redux state, show toast with the error message
+        showToast(error || err || "Failed to create user", "error");
+      });
+  };
+
+  const openModal = () => {
+    dispatch(clearError());
+    setShowForm(true);
   };
 
   if (loading) return <Spinner />;
@@ -44,20 +76,11 @@ export default function AdminUsers() {
             User Management
           </h2>
           <Button
-            onClick={() => setShowForm(!showForm)}
+            onClick={openModal}
             className="flex items-center gap-2"
           >
-            {showForm ? (
-              <>
-                <X className="w-4 h-4" />
-                Cancel
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4" />
-                Create User
-              </>
-            )}
+            <Plus className="w-4 h-4" />
+            Create User
           </Button>
         </div>
         
@@ -67,68 +90,76 @@ export default function AdminUsers() {
           </div>
         )}
 
-        {/* Create User Form */}
-        {showForm && (
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-green-200 dark:bg-gray-800 dark:border-gray-700">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <UserPlus className="w-5 h-5" />
-              Create New User
-            </h3>
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    required
-                  />
-                </div>
+        {/* Create User Modal */}
+        <Modal
+          isOpen={showForm}
+          onClose={() => setShowForm(false)}
+          title="Create New User"
+          size="lg"
+        >
+          <form onSubmit={handleCreateUser} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    required
-                    minLength={6}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  >
-                    <option value="developer">Developer</option>
-                    <option value="manager">Manager</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
               </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="developer">Developer</option>
+                  <option value="manager">Manager</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowForm(false)}
+              >
+                Cancel
+              </Button>
               <Button type="submit" className="flex items-center gap-2">
                 <UserPlus className="w-4 h-4" />
                 Create User
               </Button>
-            </form>
-          </div>
-        )}
+            </div>
+          </form>
+        </Modal>
 
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700">
@@ -178,7 +209,7 @@ export default function AdminUsers() {
                     <Button
                       variant={user.isActive ? "destructive" : "default"}
                       size="sm"
-                      onClick={() => handleToggleUser(user._id)}
+                      onClick={() => handleToggleUser(user._id, user.name, user.isActive ? "deactivate" : "activate")}
                       className="flex items-center gap-1"
                     >
                       {user.isActive ? (

@@ -50,12 +50,14 @@ export default function ManagerHome() {
           value={stats?.projects?.toString() || "0"} 
           description="Active projects"
           icon={Folder}
+          navigateTo="/manager/projects"
         />
         <Card 
           title="My Tasks" 
           value={stats?.tasks?.toString() || "0"} 
           description={`${stats?.completedTasks || 0} completed, ${stats?.pendingTasks || 0} pending`}
           icon={CheckSquare}
+          navigateTo="/manager/tasks"
         />
         <Card 
           title="Developers" 

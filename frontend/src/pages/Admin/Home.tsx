@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
 import Card from "../../components/Card";
 import { fetchDashboardStatsAPI } from "../../api/admin";
@@ -18,6 +19,7 @@ interface DashboardStats {
 export default function AdminHome() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -52,18 +54,21 @@ export default function AdminHome() {
           value={stats?.users?.toString() || "0"} 
           description={`${stats?.activeUsers || 0} active users`}
           icon={Users}
+          navigateTo="/admin/users"
         />
         <Card 
           title="Projects" 
           value={stats?.projects?.toString() || "0"} 
           description="Total projects"
           icon={Folder}
+          navigateTo="/admin/projects"
         />
         <Card 
           title="Tasks" 
           value={stats?.tasks?.toString() || "0"} 
           description={`${stats?.completedTasks || 0} completed, ${stats?.pendingTasks || 0} pending`}
           icon={CheckSquare}
+          navigateTo="/admin/tasks"
         />
       </div>
     </Layout>

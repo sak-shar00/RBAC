@@ -6,19 +6,34 @@ import { fetchTasks, deleteTask } from "../../features/tasksSlice";
 import Spinner from "../../components/Spinner";
 import { Trash2, CheckCircle, Clock, Folder, User, UserCog } from "lucide-react";
 import { Button } from "../../components/ui/button";
+import { useNotification } from "../../context/NotificationContext";
 
 export default function AdminTasks() {
   const dispatch = useDispatch<AppDispatch>();
   const { tasks, loading, error } = useSelector((state: RootState) => state.tasks);
+  const { showToast, showConfirmation } = useNotification();
 
   useEffect(() => {
     dispatch(fetchTasks());
   }, [dispatch]);
 
-  const handleDeleteTask = (taskId: string) => {
-    if (confirm("Are you sure you want to delete this task?")) {
-      dispatch(deleteTask(taskId));
-    }
+  const handleDeleteTask = (taskId: string, taskTitle: string) => {
+    showConfirmation({
+      title: "Delete Task",
+      message: `Are you sure you want to delete the task "${taskTitle}"? This action cannot be undone.`,
+      confirmText: "Delete",
+      variant: "danger",
+      onConfirm: () => {
+        dispatch(deleteTask(taskId))
+          .unwrap()
+          .then(() => {
+            showToast("Task deleted successfully!", "success");
+          })
+          .catch((err: string) => {
+            showToast(err || "Failed to delete task", "error");
+          });
+      },
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -99,7 +114,7 @@ export default function AdminTasks() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDeleteTask(task._id)}
+                      onClick={() => handleDeleteTask(task._id, task.title)}
                       className="flex items-center gap-1"
                     >
                       <Trash2 className="w-4 h-4" />

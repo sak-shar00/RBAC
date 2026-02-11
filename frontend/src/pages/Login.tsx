@@ -5,6 +5,7 @@ import type { RootState, AppDispatch } from "../store";
 import { login } from "../features/authSlice";
 import { Button } from "../components/ui/button";
 import Spinner from "../components/Spinner";
+import { useNotification } from "../context/NotificationContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -14,6 +15,7 @@ export default function Login() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { showToast } = useNotification();
 
   // Loading stages
   const stages = [
@@ -41,8 +43,13 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = await dispatch(login({ email, password }));
-    if (login.fulfilled.match(result)) {
+    if (login.fulfilled.match(result) && result.payload?.user?.name) {
+      showToast(`Welcome back, ${result.payload.user.name}!`, "success");
       navigate(`/${result.payload.role}/home`);
+    } else {
+      // Get error message from result payload or Redux state
+      const errorMsg = result.payload?.message || error || "Login failed. Please try again.";
+      showToast(errorMsg, "error");
     }
   };
 

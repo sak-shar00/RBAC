@@ -33,19 +33,21 @@ export default function DeveloperHome() {
           title="Assigned Tasks" 
           value={stats?.assignedTasks?.toString() || "0"} 
           description="Tasks assigned to you" 
-          icon={CheckSquare} 
+          icon={CheckSquare}
+          navigateTo="/developer/tasks"
         />
         <Card 
           title="In Progress" 
           value={stats?.inProgress?.toString() || "0"} 
           description="Currently working" 
-          icon={Clock} 
+          icon={Clock}
+          navigateTo="/developer/tasks"
         />
         <Card 
           title="Completed" 
           value={stats?.completed?.toString() || "0"} 
           description="Tasks completed" 
-          icon={Trophy} 
+          icon={Trophy}
         />
       </div>
     </Layout>
